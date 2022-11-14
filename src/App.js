@@ -50,7 +50,7 @@ function App() {
 
   const [currentQR, setCurrentQR] = useState({
     mode: "preview",
-    data: "1",
+    data: 1,
   });
 
   const baseUrlValue =
