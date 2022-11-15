@@ -48,54 +48,41 @@ const addToZip = (dataURL: string, filename: string) => {
   zip.file(filename + ".png", dataURL.split("base64,")[1], { base64: true })
 }
 
+const defaultBaseUrl = "https://dashboard.coronasafe.network/assets?asset_id="
+
 function App() {
+  const [mode, setMode] = useState("preview")
   const [range, setRange] = useState(10)
   const [start, setStart] = useState(1001)
-  const [baseURL, setBaseURL] = useState(
-    "https://dashboard.coronasafe.network/assets?asset_id="
-  )
-
-  const [currentQR, setCurrentQR] = useState({
-    mode: "preview",
-    data: 1,
-  })
-
-  const baseUrlValue =
-    baseURL.length > 0
-      ? baseURL
-      : "https://dashboard.coronasafe.network/assets?asset_id="
+  const [baseURL, setBaseURL] = useState(defaultBaseUrl)
+  const [currentQRId, setCurrentQR] = useState(start)
 
   const onGenerate = (start: number) => {
-    setCurrentQR({
-      mode: "zipping",
-      data: start,
-    })
+    setMode("zipping")
+    setCurrentQR(start)
   }
 
   useEffect(() => {
-    if (currentQR.mode === "zipping") {
-      console.log("zipping", currentQR.data - start + 1, "of", range)
-      zipAs(currentQR.data.toString())
-      if (currentQR.data - start < range - 1) {
-        setCurrentQR({
-          mode: "zipping",
-          data: currentQR.data + 1,
-        })
+    if (mode === "zipping") {
+      console.log("zipping", currentQRId - start + 1, "of", range)
+      zipAs(currentQRId.toString())
+      if (currentQRId - start < range - 1) {
+        setCurrentQR(currentQRId + 1)
       } else {
-        setCurrentQR({
-          mode: "preview",
-          data: start,
-        })
+        setMode("preview")
+        setCurrentQR(start)
         setTimeout(() => {
           zip.generateAsync({ type: "blob" }).then(function (content) {
             console.log(content)
-            saveAs(content, "QR Codes.zip")
+            saveAs(content, `QR_Codes_${start}-${start + range}.zip`)
           })
         }, 2000)
       }
+    } else if (mode === "preview") {
+      setCurrentQR(start)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQR, range, start])
+  }, [currentQRId, range, start, mode])
 
   return (
     <div className="bg-gray-100 h-screen max-h-screen overflow-auto p-12 flex items-center justify-center">
@@ -103,7 +90,7 @@ function App() {
         <div className="px-4 py-5 sm:p-6 flex flex-col items-center">
           <Tabs tabs={[{ name: "Template", href: "/", current: true }]} />
 
-          {currentQR.mode === "preview" && (
+          {mode === "preview" && (
             <>
               <h3 className="mt-4 text-lg font-medium leading-6 text-gray-900">
                 Generate your QRs
@@ -118,9 +105,7 @@ function App() {
                 <Input
                   value={baseURL}
                   label="Base URL"
-                  placeholder={
-                    "https://dashboard.coronasafe.network/assets?asset_id="
-                  }
+                  placeholder={defaultBaseUrl}
                   onChange={(e) => {
                     setBaseURL(e.target.value)
                   }}
@@ -153,10 +138,10 @@ function App() {
               </div>
             </>
           )}
-          {currentQR.mode === "zipping" && (
+          {mode === "zipping" && (
             <>
               <div className="mt-5 font-medium leading-6 text-lg text-gray-900">
-                Generating {currentQR.data - start + 1} of {range}
+                Generating {currentQRId - start + 1} of {range}
               </div>
               <div className="my-4 text-sm text-gray-500">
                 Bear with us as we generate your QRs :)
@@ -165,7 +150,7 @@ function App() {
                 <div
                   className="h-6 bg-blue-600 rounded-full"
                   style={{
-                    width: `${((currentQR.data - start + 1) / range) * 100}%`,
+                    width: `${((currentQRId - start + 1) / range) * 100}%`,
                   }}
                 ></div>
               </div>
@@ -179,8 +164,11 @@ function App() {
             id="printarea"
             className="p-6 flex flex-col items-center bg-white"
           >
-            <QRCodeSVG size={256} value={`${baseUrlValue}${currentQR.data}`} />
-            <span className="text-gray-500 mt-2">{currentQR.data}</span>
+            <QRCodeSVG
+              size={256}
+              value={`${baseURL || defaultBaseUrl}${currentQRId}`}
+            />
+            <span className="text-gray-500 mt-2">{currentQRId}</span>
           </div>
         </div>
       </div>
