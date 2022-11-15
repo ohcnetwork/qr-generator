@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 import { toPng } from "html-to-image"
 import JSZip from "jszip"
@@ -10,79 +10,53 @@ import Tabs from "./components/Tabs.js"
 import Range from "./components/Range.js"
 
 const zip = new JSZip()
-
-function saveAsHelper(uri: string, filename: string) {
-  var link = document.createElement("a")
-  if (typeof link.download === "string") {
-    link.href = uri
-    link.download = filename
-    //Firefox requires the link to be in the body
-    document.body.appendChild(link)
-    //Simulate click
-    link.click()
-    //Remove the link when done
-    document.body.removeChild(link)
-  } else {
-    window.open(uri)
-  }
-}
-
-const printAs = (filename: string) => {
-  const printArea = document.querySelector("#printarea") as HTMLElement
-  if (printArea) {
-    toPng(printArea, { cacheBust: true }).then((dataUrl) => {
-      saveAsHelper(dataUrl, filename + ".png")
-    })
-  }
-}
-const zipAs = (filename: string) => {
-  const printArea = document.querySelector("#printarea") as HTMLElement
-  if (printArea) {
-    toPng(printArea, { cacheBust: true }).then((dataUrl) => {
-      addToZip(dataUrl, filename)
-    })
-  }
-}
-
-const addToZip = (dataURL: string, filename: string) => {
-  zip.file(filename + ".png", dataURL.split("base64,")[1], { base64: true })
-}
-
 const defaultBaseUrl = "https://dashboard.coronasafe.network/assets?asset_id="
 
 function App() {
   const [mode, setMode] = useState("preview")
-  const [range, setRange] = useState(10)
-  const [start, setStart] = useState(1001)
+  const [qrCodesCount, setQrCodesCount] = useState(10)
+  const [startingQrId, setStartingQrId] = useState(1001)
+  const [currentQrId, setCurrentQrId] = useState(startingQrId)
   const [baseURL, setBaseURL] = useState(defaultBaseUrl)
-  const [currentQRId, setCurrentQR] = useState(start)
+  const printAreaRef = useRef<HTMLDivElement>(null)
 
-  const onGenerate = (start: number) => {
-    setMode("zipping")
-    setCurrentQR(start)
+  const addToZip = (filename: string, callback: () => void) => {
+    if (printAreaRef.current) {
+      toPng(printAreaRef.current, { cacheBust: true }).then((dataUrl) => {
+        zip.file(filename + ".png", dataUrl.split("base64,")[1], {
+          base64: true,
+        })
+        callback()
+      })
+    }
   }
 
   useEffect(() => {
     if (mode === "zipping") {
-      console.log("zipping", currentQRId - start + 1, "of", range)
-      zipAs(currentQRId.toString())
-      if (currentQRId - start < range - 1) {
-        setCurrentQR(currentQRId + 1)
+      console.log("zipping", currentQrId - startingQrId + 1, "of", qrCodesCount)
+      if (currentQrId - startingQrId < qrCodesCount - 1) {
+        addToZip(currentQrId.toString(), () => {
+          setCurrentQrId(currentQrId + 1)
+        })
       } else {
-        setMode("preview")
-        setCurrentQR(start)
-        setTimeout(() => {
+        addToZip(currentQrId.toString(), () => {
           zip.generateAsync({ type: "blob" }).then(function (content) {
             console.log(content)
-            saveAs(content, `QR_Codes_${start}-${start + range}.zip`)
-          })
-        }, 2000)
+            saveAs(
+              content,
+              `QR_Codes-${startingQrId}...${
+                startingQrId + qrCodesCount - 1
+              }.zip`
+              )
+            })
+          console.timeEnd("zipping took")
+          setMode("preview")
+        })
       }
     } else if (mode === "preview") {
-      setCurrentQR(start)
+      setCurrentQrId(startingQrId)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQRId, range, start, mode])
+  }, [currentQrId, startingQrId, mode])
 
   return (
     <div className="bg-gray-100 h-screen max-h-screen overflow-auto p-12 flex items-center justify-center">
@@ -114,16 +88,16 @@ function App() {
                 <Range
                   min={1}
                   max={1000}
-                  value={range}
-                  onChange={setRange}
+                  value={qrCodesCount}
+                  onChange={setQrCodesCount}
                   label={"How many QRs do you need to Generate?"}
                 />
 
                 <Range
                   min={1}
                   max={10000}
-                  value={start}
-                  onChange={setStart}
+                  value={startingQrId}
+                  onChange={setStartingQrId}
                   label={"Start from?"}
                 />
               </div>
@@ -131,7 +105,10 @@ function App() {
                 <button
                   type="button"
                   className="inline-flex items-center justify-center rounded-md border border-transparent px-4 py-2 font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:text-sm"
-                  onClick={(_) => onGenerate(start)}
+                  onClick={() => {
+                    console.time("zipping took")
+                    setMode("zipping")
+                  }}
                 >
                   Generate
                 </button>
@@ -141,7 +118,7 @@ function App() {
           {mode === "zipping" && (
             <>
               <div className="mt-5 font-medium leading-6 text-lg text-gray-900">
-                Generating {currentQRId - start + 1} of {range}
+                Generating {currentQrId - startingQrId + 1} of {qrCodesCount}
               </div>
               <div className="my-4 text-sm text-gray-500">
                 Bear with us as we generate your QRs :)
@@ -150,7 +127,9 @@ function App() {
                 <div
                   className="h-6 bg-blue-600 rounded-full"
                   style={{
-                    width: `${((currentQRId - start + 1) / range) * 100}%`,
+                    width: `${
+                      ((currentQrId - startingQrId + 1) / qrCodesCount) * 100
+                    }%`,
                   }}
                 ></div>
               </div>
@@ -161,14 +140,14 @@ function App() {
             <span className="text-gray-500 text-2xl">Preview</span>
           </div>
           <div
-            id="printarea"
+            ref={printAreaRef}
             className="p-6 flex flex-col items-center bg-white"
           >
             <QRCodeSVG
               size={256}
-              value={`${baseURL || defaultBaseUrl}${currentQRId}`}
+              value={`${baseURL || defaultBaseUrl}${currentQrId}`}
             />
-            <span className="text-gray-500 mt-2">{currentQRId}</span>
+            <span className="text-gray-500 mt-2">{currentQrId}</span>
           </div>
         </div>
       </div>
