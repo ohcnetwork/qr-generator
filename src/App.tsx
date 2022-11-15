@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
 
-import QRCode from "react-qr-code"
-import html2canvas from "html2canvas"
+import { toPng } from "html-to-image"
 import JSZip from "jszip"
 import { saveAs } from "file-saver"
+import { QRCodeSVG } from "qrcode.react"
 
 import Input from "./components/Input.js"
 import Tabs from "./components/Tabs.js"
@@ -29,20 +29,19 @@ function saveAsHelper(uri: string, filename: string) {
 
 const printAs = (filename: string) => {
   const printArea = document.querySelector("#printarea") as HTMLElement
-  if (printArea){
-    html2canvas(printArea).then(function (canvas) {
-      saveAsHelper(canvas.toDataURL(), filename + ".png")
+  if (printArea) {
+    toPng(printArea, { cacheBust: true }).then((dataUrl) => {
+      saveAsHelper(dataUrl, filename + ".png")
     })
   }
 }
 const zipAs = (filename: string) => {
   const printArea = document.querySelector("#printarea") as HTMLElement
-  if (printArea){
-  html2canvas(printArea).then(function (canvas) {
-    addToZip(canvas.toDataURL(), filename)
-    // saveAsHelper(canvas.toDataURL(), filename + ".png");
-  })
-}
+  if (printArea) {
+    toPng(printArea, { cacheBust: true }).then((dataUrl) => {
+      addToZip(dataUrl, filename)
+    })
+  }
 }
 
 const addToZip = (dataURL: string, filename: string) => {
@@ -52,7 +51,9 @@ const addToZip = (dataURL: string, filename: string) => {
 function App() {
   const [range, setRange] = useState(10)
   const [start, setStart] = useState(1001)
-  const [baseURL, setBaseURL] = useState("")
+  const [baseURL, setBaseURL] = useState(
+    "https://dashboard.coronasafe.network/assets?asset_id="
+  )
 
   const [currentQR, setCurrentQR] = useState({
     mode: "preview",
@@ -64,7 +65,7 @@ function App() {
       ? baseURL
       : "https://dashboard.coronasafe.network/assets?asset_id="
 
-  const onGenerate = (start : number) => {
+  const onGenerate = (start: number) => {
     setCurrentQR({
       mode: "zipping",
       data: start,
@@ -174,8 +175,11 @@ function App() {
           <div className="mt-5">
             <span className="text-gray-500 text-2xl">Preview</span>
           </div>
-          <div id="printarea" className="p-6 flex flex-col items-center">
-            <QRCode value={`${baseUrlValue}${currentQR.data}`} />
+          <div
+            id="printarea"
+            className="p-6 flex flex-col items-center bg-white"
+          >
+            <QRCodeSVG size={256} value={`${baseUrlValue}${currentQR.data}`} />
             <span className="text-gray-500 mt-2">{currentQR.data}</span>
           </div>
         </div>
