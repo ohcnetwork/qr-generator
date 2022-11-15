@@ -7,11 +7,21 @@ const tabs = [
 ];
 */
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
+type Tab = {
+  name: string
+  href: string
+  current: boolean
 }
 
-export default function Tabs({ tabs }) {
+type TabProps = {
+  tabs: Tab[]
+}
+
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(" ")
+}
+
+export default function Tabs({ tabs }: TabProps) {
   return (
     <div>
       <div className="sm:hidden">
@@ -23,7 +33,7 @@ export default function Tabs({ tabs }) {
           id="tabs"
           name="tabs"
           className="block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-          defaultValue={tabs.find((tab) => tab.current).name}
+          defaultValue={tabs.find((tab) => tab.current)?.name ?? ""}
         >
           {tabs.map((tab) => (
             <option key={tab.name}>{tab.name}</option>
@@ -50,5 +60,5 @@ export default function Tabs({ tabs }) {
         </nav>
       </div>
     </div>
-  );
+  )
 }

@@ -1,94 +1,100 @@
-import { useEffect, useState } from "react";
-import QRCode from "react-qr-code";
-import Input from "./components/Input";
-import Tabs from "./components/Tabs";
+import { useEffect, useState } from "react"
 
-import html2canvas from "html2canvas";
-import Range from "./components/Range";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import QRCode from "react-qr-code"
+import html2canvas from "html2canvas"
+import JSZip from "jszip"
+import { saveAs } from "file-saver"
 
-const zip = new JSZip();
+import Input from "./components/Input.js"
+import Tabs from "./components/Tabs.js"
+import Range from "./components/Range.js"
 
-function saveAsHelper(uri, filename) {
-  var link = document.createElement("a");
+const zip = new JSZip()
+
+function saveAsHelper(uri: string, filename: string) {
+  var link = document.createElement("a")
   if (typeof link.download === "string") {
-    link.href = uri;
-    link.download = filename;
+    link.href = uri
+    link.download = filename
     //Firefox requires the link to be in the body
-    document.body.appendChild(link);
+    document.body.appendChild(link)
     //Simulate click
-    link.click();
+    link.click()
     //Remove the link when done
-    document.body.removeChild(link);
+    document.body.removeChild(link)
   } else {
-    window.open(uri);
+    window.open(uri)
   }
 }
 
-// eslint-disable-next-line no-unused-vars
-const printAs = (filename) => {
-  html2canvas(document.querySelector("#printarea")).then(function (canvas) {
-    saveAsHelper(canvas.toDataURL(), filename + ".png");
-  });
-};
-const zipAs = (filename) => {
-  html2canvas(document.querySelector("#printarea")).then(function (canvas) {
-    addToZip(canvas.toDataURL(), filename);
+const printAs = (filename: string) => {
+  const printArea = document.querySelector("#printarea") as HTMLElement
+  if (printArea){
+    html2canvas(printArea).then(function (canvas) {
+      saveAsHelper(canvas.toDataURL(), filename + ".png")
+    })
+  }
+}
+const zipAs = (filename: string) => {
+  const printArea = document.querySelector("#printarea") as HTMLElement
+  if (printArea){
+  html2canvas(printArea).then(function (canvas) {
+    addToZip(canvas.toDataURL(), filename)
     // saveAsHelper(canvas.toDataURL(), filename + ".png");
-  });
-};
+  })
+}
+}
 
-const addToZip = (dataURL, filename) => {
-  zip.file(filename + ".png", dataURL.split("base64,")[1], { base64: true });
-};
+const addToZip = (dataURL: string, filename: string) => {
+  zip.file(filename + ".png", dataURL.split("base64,")[1], { base64: true })
+}
 
 function App() {
-  const [range, setRange] = useState(10);
-  const [start, setStart] = useState(1001);
-  const [baseURL, setBaseURL] = useState("");
+  const [range, setRange] = useState(10)
+  const [start, setStart] = useState(1001)
+  const [baseURL, setBaseURL] = useState("")
 
   const [currentQR, setCurrentQR] = useState({
     mode: "preview",
-    data: "1",
-  });
+    data: 1,
+  })
 
   const baseUrlValue =
     baseURL.length > 0
       ? baseURL
-      : "https://dashboard.coronasafe.network/assets?asset_id=";
+      : "https://dashboard.coronasafe.network/assets?asset_id="
 
-  const onGenerate = (start) => {
+  const onGenerate = (start : number) => {
     setCurrentQR({
       mode: "zipping",
       data: start,
-    });
-  };
+    })
+  }
 
   useEffect(() => {
     if (currentQR.mode === "zipping") {
-      console.log("zipping", currentQR.data - start + 1, "of", range);
-      zipAs(currentQR.data);
+      console.log("zipping", currentQR.data - start + 1, "of", range)
+      zipAs(currentQR.data.toString())
       if (currentQR.data - start < range - 1) {
         setCurrentQR({
           mode: "zipping",
           data: currentQR.data + 1,
-        });
+        })
       } else {
         setCurrentQR({
           mode: "preview",
           data: start,
-        });
+        })
         setTimeout(() => {
           zip.generateAsync({ type: "blob" }).then(function (content) {
-            console.log(content);
-            saveAs(content, "QR Codes.zip");
-          });
-        }, 2000);
+            console.log(content)
+            saveAs(content, "QR Codes.zip")
+          })
+        }, 2000)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQR, range, start]);
+  }, [currentQR, range, start])
 
   return (
     <div className="bg-gray-100 h-screen max-h-screen overflow-auto p-12 flex items-center justify-center">
@@ -115,7 +121,7 @@ function App() {
                     "https://dashboard.coronasafe.network/assets?asset_id="
                   }
                   onChange={(e) => {
-                    setBaseURL(e.target.value);
+                    setBaseURL(e.target.value)
                   }}
                 />
 
@@ -148,15 +154,15 @@ function App() {
           )}
           {currentQR.mode === "zipping" && (
             <>
-              <div class="mt-5 font-medium leading-6 text-lg text-gray-900">
+              <div className="mt-5 font-medium leading-6 text-lg text-gray-900">
                 Generating {currentQR.data - start + 1} of {range}
               </div>
-              <div class="my-4 text-sm text-gray-500">
+              <div className="my-4 text-sm text-gray-500">
                 Bear with us as we generate your QRs :)
               </div>
-              <div class="w-full h-6 bg-gray-200 rounded-full">
+              <div className="w-full h-6 bg-gray-200 rounded-full">
                 <div
-                  class="h-6 bg-blue-600 rounded-full"
+                  className="h-6 bg-blue-600 rounded-full"
                   style={{
                     width: `${((currentQR.data - start + 1) / range) * 100}%`,
                   }}
@@ -175,7 +181,7 @@ function App() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

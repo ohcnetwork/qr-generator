@@ -1,4 +1,18 @@
-export default function Input({ value, onChange, label, placeholder }) {
+import { ChangeEvent } from "react"
+
+type InputProps = {
+  value: string
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void
+  label: string
+  placeholder?: string
+}
+
+export default function Input({
+  value,
+  onChange,
+  label,
+  placeholder,
+}: InputProps) {
   return (
     <div className="rounded-md border border-gray-300 px-3 py-2 shadow-sm focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
       <label
@@ -17,5 +31,5 @@ export default function Input({ value, onChange, label, placeholder }) {
         placeholder={placeholder}
       />
     </div>
-  );
+  )
 }

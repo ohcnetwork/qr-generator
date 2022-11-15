@@ -1,4 +1,18 @@
-export default function Range({ value, label, onChange, min = 1, max = 100 }) {
+type RangeProps = {
+  value: number
+  onChange: (value: number) => void
+  label: string
+  min: number
+  max: number
+}
+
+export default function Range({
+  value,
+  label,
+  onChange,
+  min = 1,
+  max = 100,
+}: RangeProps) {
   return (
     <div>
       <label
@@ -10,7 +24,7 @@ export default function Range({ value, label, onChange, min = 1, max = 100 }) {
           type="number"
           value={value}
           onChange={(e) => {
-            onChange(e.target.value);
+            onChange(parseInt(e.target.value))
           }}
           className="w-20 text-center border-0 h-6"
         />
@@ -20,12 +34,12 @@ export default function Range({ value, label, onChange, min = 1, max = 100 }) {
         type="range"
         value={value}
         onChange={(e) => {
-          onChange(e.target.value);
+          onChange(parseInt(e.target.value))
         }}
         min={min}
         max={max}
         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
       />
     </div>
-  );
+  )
 }
