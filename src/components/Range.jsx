@@ -12,6 +12,8 @@ export default function Range({ value, label, onChange, min = 1, max = 100 }) {
           onChange={(e) => {
             onChange(parseInt(e.target.value));
           }}
+          min={min}
+          max={max}
           className="w-20 text-center border-0 h-6"
         />
       </label>
